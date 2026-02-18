@@ -12,10 +12,77 @@ def create(filepath):
     Queen = len(matrix)
     return matrix, Queen
 
+def checkMatrix(matrix):
+    numrows = len(matrix)
+    
+    for row in matrix:
+        if len(row) != numrows:
+            return False
+        
+    colors = set()
+    
+    for row in matrix:
+        for cell in row:
+            if not cell.isupper() or not cell.isalpha():
+                return False
+            colors.add(cell)
+    
+    if len(colors) != numrows:
+        return False
+    
+    return True
+    
+
+def printSolution(queenpos, matrix):
+    if queenpos is None:
+        print("No solution found")
+        return
+    
+    size = len(matrix)
+    result = [row[:] for row in matrix]
+    
+    for i, (row, col) in enumerate(queenpos):
+        result[row][col] = 'Q'
+    
+    for row in result:
+        print(''.join(row))
+    print("\nQueen positions:")
+    for i, (row, col) in enumerate(queenpos):
+        print(f"Queen {i+1}: ({row}, {col})")
+
+
+def saveSolutionToFile(queenpos, matrix, filename):
+    if queenpos is None:
+        output_content = "No solution found\n"
+    else:
+        output_lines = []
+
+        size = len(matrix)
+        result = [row[:] for row in matrix]
+        
+        for i, (row, col) in enumerate(queenpos):
+            result[row][col] = 'Q'
+        
+        for row in result:
+            output_lines.append(''.join(row))
+        
+        output_content = '\n'.join(output_lines)
+    
+    output_dir = Path(__file__).parent / 'output'
+    output_dir.mkdir(exist_ok=True)
+    
+    output_file = output_dir / f"{filename}Solution.txt"
+    
+    with open(output_file, 'w') as f:
+        f.write(output_content)
+
 
 def plsSolveQueen(num, matrix, Queen):
     matrixforthis = matrix
     Queenpos = [[-1, -1] for _ in range(Queen)]
+    iteration = 0
+
+
 
     def sameblock(a, b, n):
         for i in range(n):
@@ -24,8 +91,13 @@ def plsSolveQueen(num, matrix, Queen):
         return False
 
     def findPos(n):
+        nonlocal iteration
         if n == num:
+            iteration += 1
+            if iteration % 1000 == 0:
+                printSolution(Queenpos, matrix)
             return checkQueen()
+
 
         else:
             for i in range(Queen):
@@ -37,7 +109,7 @@ def plsSolveQueen(num, matrix, Queen):
                         Queenpos[n][1] = j
                         if findPos(n+1):
                             return True
-            return False
+            return False 
 
     def checkQueen():
         for i in range(Queen):
@@ -53,41 +125,28 @@ def plsSolveQueen(num, matrix, Queen):
         return True
     
     if findPos(0):
-        return Queenpos
+        return Queenpos, iteration
     else:
-        return None
-
-
-def print_solution(queenpos, matrix):
-    if queenpos is None:
-        print("No solution found")
-        return
+        return None, iteration
     
-    size = len(matrix)
-    result = [row[:] for row in matrix]
     
-    for i, (row, col) in enumerate(queenpos):
-        result[row][col] = 'Q'
-    
-    print("\nSolution:")
-    for row in result:
-        print(' '.join(row))
-    print("\nQueen positions:")
-    for i, (row, col) in enumerate(queenpos):
-        print(f"Queen {i+1}: ({row}, {col})")
-
-
-if __name__ == "__main__":
+while  True:
     filedir = Path(__file__).parent
     filename = input("Enter file name:")
     filepath = filedir / 'test' / (filename + ".txt")
 
     matrix, Queen = create(filepath)
+    if checkMatrix(matrix):
+        break
+    else:
+        print("Input a valid board!\n")
 
-    # Run and time the solver
-    start_time = time.time()
-    solution = plsSolveQueen(Queen, matrix, Queen)
-    end_time = time.time()
+startTime = time.time()
+solution, iteration = plsSolveQueen(Queen, matrix, Queen)
+endTime = time.time()
 
-    print_solution(solution, matrix)
-    print(f"\nTime elapsed: {end_time - start_time:.4f} seconds")
+printSolution(solution, matrix)
+print(iteration)
+print(f"\nTime taken: {endTime - startTime:.4f} seconds")
+
+saveSolutionToFile(solution, matrix, filename)
